@@ -7,21 +7,22 @@ AM_CFLAGS += -DXC_WANT_COMPAT_EVTCHN_API -DXC_WANT_COMPAT_GNTTAB_API
 AM_CPPFLAGS  = -D_GNU_SOURCE
 AM_CPPFLAGS += -I$(top_srcdir)/include
 CRYPTLIBS = -lcrypto -Lcrypto -lxts-aes
+ICBLIBS = -licbinn_resolved -lpthread -ldl
 
 libexec_PROGRAMS = tapdisk
 
 tapdisk_SOURCES = tapdisk2.c
-tapdisk_LDADD = libtapdisk.la crypto/libxts-aes.la $(CRYPTLIBS)
+tapdisk_LDADD = libtapdisk.la crypto/libxts-aes.la $(CRYPTLIBS) $(ICBLIBS)
 
 noinst_PROGRAMS = tapdisk-stream
 
-tapdisk_stream_LDADD = libtapdisk.la crypto/libxts-aes.la $(CRYPTLIBS)
+tapdisk_stream_LDADD = libtapdisk.la crypto/libxts-aes.la $(CRYPTLIBS) $(ICBLIBS)
 
 sbin_PROGRAMS  = td-util
 sbin_PROGRAMS += td-rated
 
 td_util_SOURCES = td.c
-td_util_LDADD = libtapdisk.la
+td_util_LDADD = libtapdisk.la $(ICBLIBS)
 
 noinst_LTLIBRARIES = libtapdisk.la
 

@@ -173,7 +173,7 @@ vhd_util_snapshot(int argc, char **argv)
 		goto usage;
 	}
 
-	ppath = canonpath(pname, __ppath);
+	ppath = vhd_realpath(pname, __ppath);
 	if (!ppath)
 		return -errno;
 

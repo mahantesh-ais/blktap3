@@ -38,6 +38,7 @@
 
 #include <openssl/evp.h>
 
+#include "icbinn.h"
 #include "libvhd.h"
 
 #define MAX_KEY_SIZE 512
@@ -92,6 +93,58 @@ out:
 	return err;
 }
 
+static int
+vhd_util_read_key_icbinn(ICBINN *icb, const char *keypath, uint8_t *key,
+		  size_t max_size, size_t *out_size)
+{
+	int fd = -1, err;
+	ssize_t size;
+	struct icbinn_stat sb;
+
+
+
+	err = icbinn_stat(icb, keypath, &sb);
+	if (err) {
+		ERR("failed to stat %s\n", keypath);
+		err = -ENOENT;
+		goto out;
+	}
+
+	if (sb.type != ICBINN_TYPE_FILE) {
+		ERR("%s isn't a file\n", keypath);
+		err = -EISDIR;
+		goto out;
+	}
+
+	fd = icbinn_open(icb, keypath, O_RDONLY);
+	if (fd == -1) {
+		ERR("failed to open %s\n", keypath );
+		err = -EINVAL;
+		goto out;
+	}
+
+	size = icbinn_pread(icb, fd, key, max_size, 0);
+	if (size == -1) {
+		ERR("failed to read key\n");
+		err = -EIO;
+		goto out;
+	}
+
+	if (size != sb.size) {
+		ERR("short read of key\n");
+		err = -EIO;
+		goto out;
+	}
+
+	if (out_size)
+		*out_size = size;
+
+out:
+	if (fd != -1)
+		icbinn_close(icb,fd);
+	return err;
+}
+
 /*
  * calculates keyhash by taking a SHA256 hash of @keyhash->nonce + key
  */
@@ -138,9 +191,15 @@ vhd_util_calculate_keyhash(struct vhd_keyhash *keyhash, const char *keypath)
 	int err;
 	size_t size;
 	uint8_t key[MAX_KEY_SIZE];
+	ICBINN *icb = vhd_icbinn_key();
 
 	size = 0;
-	err = vhd_util_read_key(keypath, key, sizeof(key), &size);
+	if (icb) {
+		err = vhd_util_read_key_icbinn(icb, keypath, key, sizeof(key), &size);
+	}
+	else {
+		err = vhd_util_read_key(keypath, key, sizeof(key), &size);
+	}
 	if (err) {
 		ERR("failed to read key: %d\n", err);
 		goto out;

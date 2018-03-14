@@ -38,6 +38,8 @@
 #include <string.h>
 #include <limits.h>
 
+char *vhd_realpath(const char *path, char *resolved_path);
+
 #include "relative-path.h"
 #include "canonpath.h"
 
@@ -240,14 +242,14 @@ relative_path_to(char *from, char *to, int *err)
 		return NULL;
 	}
 
-	to_absolute = canonpath(to, __to_absolute);
+	to_absolute = vhd_realpath(to, __to_absolute);
 	if (!to_absolute) {
 		EPRINTF("failed to get absolute path of %s\n", to);
 		*err = -errno;
 		goto out;
 	}
 
-	from_absolute = canonpath(from, __from_absolute);
+	from_absolute = vhd_realpath(from, __from_absolute);
 	if (!from_absolute) {
 		EPRINTF("failed to get absolute path of %s\n", from);
 		*err = -errno;
